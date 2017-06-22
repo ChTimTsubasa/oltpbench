@@ -39,7 +39,8 @@ public class Delivery extends TPCCProcedure {
 	        "SELECT NO_O_ID FROM " + TPCCConstants.TABLENAME_NEWORDER + 
 	        " WHERE NO_D_ID = ? " +
 	        "   AND NO_W_ID = ? " +
-	        " ORDER BY NO_O_ID ASC " +
+	        "   AND NO_O_ID > -1" +
+                //" ORDER BY NO_O_ID ASC " +
 	        " LIMIT 1");
 	
 	public SQLStmt delivDeleteNewOrderSQL = new SQLStmt(
@@ -66,14 +67,16 @@ public class Delivery extends TPCCProcedure {
 	        "   SET OL_DELIVERY_D = ? " +
 			" WHERE OL_O_ID = ? " +
 			"   AND OL_D_ID = ? " +
-			"   AND OL_W_ID = ? ");
+			"   AND OL_W_ID = ? " +
+                        "   AND OL_NUMBER > -1");
 	
 	public SQLStmt delivSumOrderAmountSQL = new SQLStmt(
 	        "SELECT SUM(OL_AMOUNT) AS OL_TOTAL " +
 			"  FROM " + TPCCConstants.TABLENAME_ORDERLINE + 
 			" WHERE OL_O_ID = ? " +
 			"   AND OL_D_ID = ? " +
-			"   AND OL_W_ID = ?");
+			"   AND OL_W_ID = ?" +
+                        "   AND OL_NUMBER > -1");
 	
 	public SQLStmt delivUpdateCustBalDelivCntSQL = new SQLStmt(
 	        "UPDATE " + TPCCConstants.TABLENAME_CUSTOMER +
@@ -128,16 +131,17 @@ public class Delivery extends TPCCProcedure {
                 if (trace) LOG.warn(String.format("District has no new orders [W_ID=%d, D_ID=%d]", w_id, d_id));
                 continue;
             }
-
+          
             int no_o_id = rs.getInt("NO_O_ID");
             orderIDs[d_id - 1] = no_o_id;
             rs.close();
             rs = null;
 
+            
             delivDeleteNewOrder.setInt(1, no_o_id);
             delivDeleteNewOrder.setInt(2, d_id);
             delivDeleteNewOrder.setInt(3, w_id);
-            if (trace) LOG.trace("delivDeleteNewOrder START");
+            if (trace) LOG.trace("delivDeleteNewOrder START"); 
             int result = delivDeleteNewOrder.executeUpdate();
             if (trace) LOG.trace("delivDeleteNewOrder END");
             if (result != 1) {
@@ -147,8 +151,8 @@ public class Delivery extends TPCCProcedure {
                 // error makes this work with MySQL's default consistency. 
                 // Careful auditing would be required.
                 String msg = String.format("NewOrder delete failed. Not running with SERIALIZABLE isolation? " +
-                                           "[w_id=%d, d_id=%d, no_o_id=%d]", w_id, d_id, no_o_id);
-                throw new UserAbortException(msg);
+                                          "[w_id=%d, d_id=%d, no_o_id=%d]", w_id, d_id, no_o_id);
+               throw new UserAbortException(msg);
             }
 
 
@@ -198,7 +202,6 @@ public class Delivery extends TPCCProcedure {
                 throw new RuntimeException(msg);
             }
 
-
             delivSumOrderAmount.setInt(1, no_o_id);
             delivSumOrderAmount.setInt(2, d_id);
             delivSumOrderAmount.setInt(3, w_id);
@@ -214,7 +217,7 @@ public class Delivery extends TPCCProcedure {
             }
             ol_total = rs.getFloat("OL_TOTAL");
             rs.close();
-
+            
             int idx = 1; // HACK: So that we can debug this query
             delivUpdateCustBalDelivCnt.setDouble(idx++, ol_total);
             delivUpdateCustBalDelivCnt.setInt(idx++, w_id);
@@ -230,10 +233,7 @@ public class Delivery extends TPCCProcedure {
                 if (trace) LOG.warn(msg);
                 throw new RuntimeException(msg);
             }
-        }
-
-        conn.commit();
-         
+        } 
         if (trace) {
             StringBuilder terminalMessage = new StringBuilder();
             terminalMessage
