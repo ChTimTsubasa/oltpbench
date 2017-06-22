@@ -40,16 +40,19 @@ public class OrderStatus extends TPCCProcedure {
 	        "SELECT O_ID, O_CARRIER_ID, O_ENTRY_D " +
             "  FROM " + TPCCConstants.TABLENAME_OPENORDER + 
             " WHERE O_W_ID = ? " + 
-            "   AND O_D_ID = ? " + 
-            "   AND O_C_ID = ? " +
-            " ORDER BY O_ID DESC LIMIT 1");
+            "   AND O_D_ID = ? " +
+            "   AND O_ID > -1 " + 
+            "   AND O_C_ID = ? " + 
+           // " ORDER BY O_ID DESC " +
+            " LIMIT 1");
 
 	public SQLStmt ordStatGetOrderLinesSQL = new SQLStmt(
 	        "SELECT OL_I_ID, OL_SUPPLY_W_ID, OL_QUANTITY, OL_AMOUNT, OL_DELIVERY_D " + 
             "  FROM " + TPCCConstants.TABLENAME_ORDERLINE + 
             " WHERE OL_O_ID = ?" + 
             "   AND OL_D_ID = ?" + 
-            "   AND OL_W_ID = ?");
+            "   AND OL_W_ID = ?" +
+            "   AND OL_NUMBER > -1");
 
 	public SQLStmt payGetCustSQL = new SQLStmt(
 	        "SELECT C_FIRST, C_MIDDLE, C_LAST, C_STREET_1, C_STREET_2, " + 
@@ -67,6 +70,7 @@ public class OrderStatus extends TPCCProcedure {
             "  FROM " + TPCCConstants.TABLENAME_CUSTOMER + 
             " WHERE C_W_ID = ? " +
             "   AND C_D_ID = ? " +
+            "   AND C_ID > -1"   +
             "   AND C_LAST = ? " + 
             " ORDER BY C_FIRST");
 
