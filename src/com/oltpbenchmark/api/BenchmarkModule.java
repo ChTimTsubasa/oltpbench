@@ -290,7 +290,8 @@ public abstract class BenchmarkModule {
                 // method.
                 List<? extends LoaderThread> loaderThreads = loader.createLoaderTheads();
                 if (loaderThreads != null) {
-                    int maxConcurrent = workConf.getLoaderThreads();
+                    //int maxConcurrent = workConf.getLoaderThreads();
+                    int maxConcurrent = 1;
                     assert(maxConcurrent > 0);
                     if (LOG.isDebugEnabled())
                         LOG.debug(String.format("Starting %d %s.LoaderThreads [maxConcurrent=%d]",
